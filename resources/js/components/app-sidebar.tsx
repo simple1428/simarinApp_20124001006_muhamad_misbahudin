@@ -22,6 +22,31 @@ const mainNavItems: NavItem[] = [
         href: dashboard(),
         icon: LayoutGrid,
     },
+    {
+        title: 'Vessel',
+        href: dashboard(),
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Shipping Route',
+        href: dashboard(),
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Input Manifest',
+        href: dashboard(),
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Manifest History',
+        href: dashboard(),
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Occupancy',
+        href: dashboard(),
+        icon: LayoutGrid,
+    },
 ];
 
 const footerNavItems: NavItem[] = [
