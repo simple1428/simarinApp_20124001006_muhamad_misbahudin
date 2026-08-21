@@ -13,7 +13,7 @@ class DashboardController extends Controller
         $user = $request->user();
 
         if ($user->role === 'operator') {
-            return Inertia::render('Operator/Dashboard', [
+            return Inertia::render('Admin/Dashboard', [
                 'user' => $user,
             ]);
         }

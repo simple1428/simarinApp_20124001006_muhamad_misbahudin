@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
+import { Activity, BookOpen, FolderGit2, LayoutGrid, Ship } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
+import ships from '@/routes/ships';
 
 const mainNavItems: NavItem[] = [
     {
@@ -23,30 +24,15 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
-        title: 'Vessel',
-        href: dashboard(),
-        icon: LayoutGrid,
+        title: 'Master Kapal',
+        href: ships.index(),
+        icon: Ship,
     },
     {
-        title: 'Shipping Route',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Input Manifest',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Manifest History',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Occupancy',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
+        title: 'Aktivitas Penumpang',
+        href: ships.index(),
+        icon: Activity,
+    }
 ];
 
 const footerNavItems: NavItem[] = [

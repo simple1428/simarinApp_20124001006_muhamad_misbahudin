@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import type { NavItem } from '@/types';
+import { cn } from '@/lib/utils';
 
 export function NavMain({ items = [] }: { items: NavItem[] }) {
     const { isCurrentUrl } = useCurrentUrl();
@@ -20,7 +21,9 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                     <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
                             asChild
-                            isActive={isCurrentUrl(item.href)}
+                            className={cn(
+                                isCurrentUrl(item.href) && 'bg-primary text-white transition'
+                            )}
                             tooltip={{ children: item.title }}
                         >
                             <Link href={item.href} prefetch>
