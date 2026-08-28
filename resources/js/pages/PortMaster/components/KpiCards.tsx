@@ -15,21 +15,32 @@ interface KpiCardsProps {
         tahun: number;
     };
     forecast: ForecastItem | null;
+    previousComparison?: {
+        periode: string;
+        aktual: number;
+        forecast: number;
+        difference: number;
+        percentage: number;
+    } | null;
 }
 
-export function KpiCards({ summary, period, forecast }: KpiCardsProps) {
+export function KpiCards({ summary, period, forecast, previousComparison }: KpiCardsProps) {
     // Calculate passenger per trip
     const avgPassengerPerTrip = useMemo(() => {
         if (!summary || !summary.jumlah_trip || summary.jumlah_trip === 0) return 0;
         return Math.round(summary.total_penumpang / summary.jumlah_trip);
     }, [summary]);
 
-    // Calculate Growth/Change percentage between forecast and current
+    // Calculate Growth/Change percentage between forecast and baseline
     const forecastGrowth = useMemo(() => {
+        if (previousComparison && typeof previousComparison.percentage === 'number') {
+            return previousComparison.percentage;
+        }
         if (!forecast || !summary || summary.total_penumpang === 0) return 0;
         const diff = forecast.nilai_forecast - summary.total_penumpang;
         return Number(((diff / summary.total_penumpang) * 100).toFixed(1));
-    }, [forecast, summary]);
+    }, [forecast, summary, previousComparison]);
+
 
     // Occupancy Status Helper
     const getOccupancyInfo = (occ: number) => {

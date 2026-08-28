@@ -21,7 +21,9 @@ export default function Dashboard({
     forecastChart = [],
     modelAccuracy = { MAPE: 0.46, MAE: 288.71, RMSE: 374.72 },
     lastInputDate,
+    previousComparison,
 }: DashboardProps) {
+
     const [activeTab, setActiveTab] = useState<string>('overview');
 
     return (
@@ -41,6 +43,7 @@ export default function Dashboard({
                     summary={summary}
                     period={period}
                     forecast={forecast}
+                    previousComparison={previousComparison}
                 />
 
                 {/* 3. TABS NAVIGATION FOR DASHBOARD SECTIONS */}

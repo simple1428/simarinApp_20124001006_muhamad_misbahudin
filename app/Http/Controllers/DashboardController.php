@@ -163,52 +163,36 @@ class DashboardController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Summary periode terakhir
+        | Summary periode aktif (OPEN) berjalan
         |--------------------------------------------------------------------------
         */
+        $openPeriod = \App\Models\MonthlyPeriod::where('status', 'open')
+            ->orderByDesc('tahun')
+            ->orderByDesc('bulan')
+            ->first() ?? \App\Models\MonthlyPeriod::orderByDesc('tahun')->orderByDesc('bulan')->first();
 
-        $summary = MonthlySummary::with('period')
-        ->whereHas(
-            'period',
-            function($query){
-
-                $query->where(
-                    'status',
-                    'open'
-                );
-
-            }
-        )
-        ->first();
-
-        if (! $summary) {
-
+        if (! $openPeriod) {
             abort(404);
-
         }
-        $lastInputDate = PassengerRecord::orderByDesc(
-            'tanggal'
-        )
-        ->first();
+
+        // Generate / Sinkronisasi summary secara realtime dari data manifest passenger_records
+        $summary = app(\App\Services\MonthlySummaryService::class)->generate($openPeriod->bulan, $openPeriod->tahun);
+        $summary->load('period');
+
+        $lastInputDate = PassengerRecord::orderByDesc('tanggal')->orderByDesc('id')->first();
 
         /*
         |--------------------------------------------------------------------------
         | Forecast Holt-Winters terakhir
         |--------------------------------------------------------------------------
         */
-
         $lastFinal = MonthlySummary::whereHas(
             'period',
             function ($query) {
-                $query->where(
-                    'status',
-                    'final'
-                );
+                $query->where('status', 'final');
             }
         )
-            ->orderByDesc(
-                'monthly_period_id'
-            )
+            ->orderByDesc('monthly_period_id')
             ->first();
 
         $activePeriod = $summary->period;
@@ -239,123 +223,37 @@ class DashboardController extends Controller
         $lastActual = $lastFinal;
         $previousComparison = null;
 
-        if ($lastActual && $forecast) {
+        if ($lastActual && $forecast && $lastActual->total_penumpang > 0) {
             $difference = $forecast->nilai_forecast - $lastActual->total_penumpang;
             $percentage = ($difference / $lastActual->total_penumpang) * 100;
 
             $previousComparison = [
                 'periode' => $lastActual->period->bulan . '/' . $lastActual->period->tahun,
-                'aktual' => $lastActual->total_penumpang,
-                'forecast' => $forecast->nilai_forecast,
+                'aktual' => (int) $lastActual->total_penumpang,
+                'forecast' => (int) round($forecast->nilai_forecast),
                 'difference' => round($difference, 2),
-                'percentage' => round($percentage, 2),
+                'percentage' => round($percentage, 1),
             ];
         }
-      /*
-|--------------------------------------------------------------------------
-| Klasifikasi Season
-|--------------------------------------------------------------------------
-*/
-
-$seasonService = new SeasonClassificationService;
-
-
-/*
-|--------------------------------------------------------------------------
-| Kondisi Saat Ini (OPEN)
-|--------------------------------------------------------------------------
-*/
-
-$actualSeason = null;
-
-
-if($summary){
-
-    $actualSeason =
-
-        $seasonService->classify(
-
-            $summary->total_penumpang
-
-        );
-
-}
-
-
-
-/*
-|--------------------------------------------------------------------------
-| Prediksi Bulan Berikutnya
-|--------------------------------------------------------------------------
-*/
-
-$forecastSeason = null;
-
-
-if($forecast){
-
-    $forecastSeason =
-
-        $seasonService->classify(
-
-            $forecast->nilai_forecast
-
-        );
-
-}
-
-
 
         /*
         |--------------------------------------------------------------------------
-        | Season Aktual Saat Ini
+        | Klasifikasi Season
         |--------------------------------------------------------------------------
         */
+        $seasonService = new SeasonClassificationService;
 
+        // Season aktual saat ini (berdasarkan total manifest berjalan)
+        $actualSeason = $seasonService->classify($summary->total_penumpang);
 
-        $actualSeason = null;
-
-
-        if($summary){
-
-            $actualSeason =
-                $seasonService->classify(
-                    $summary->total_penumpang
-                );
-
-        }
-
-       $recommendation = [
-
-    'title'=>'Rekomendasi Operasional',
-
-    'summary'=>'Prediksi digunakan sebagai dasar persiapan operasional pelabuhan.',
-
-    'items'=>[]
-
-];
-
-
-        if($forecastSeason){
-
-
-            $recommendation['summary'] =
-                $forecastSeason['message'];
-
-
-            $recommendation['items'] =
-                $forecastSeason['recommendation'];
-
-        }
-
-        
+        // Season prediksi bulan depan
+        $forecastSeason = $forecast ? $seasonService->classify($forecast->nilai_forecast) : null;
 
         /*
         |--------------------------------------------------------------------------
         | Chart Aktual & Forecast Terintegrasi
         |--------------------------------------------------------------------------
         */
-
         $hwResult = $hwService->getFittedAndEvaluation();
         $fittedMap = $hwResult['fitted'] ?? [];
 
@@ -402,51 +300,10 @@ if($forecast){
         | Akurasi Model Dinamis
         |--------------------------------------------------------------------------
         */
-
         $modelAccuracy = [
             'MAPE' => $hwResult['mape'] ?? 0.46,
             'MAE' => $hwResult['mae'] ?? 288.71,
             'RMSE' => $hwResult['rmse'] ?? 374.72,
-        ];
-
-        /*
-        |--------------------------------------------------------------------------
-        | Analisis
-        |--------------------------------------------------------------------------
-        */
-
-        $analysisText =
-
-        'Model Holt-Winters Exponential Smoothing dipilih '
-        .'karena mampu menangkap pola tren dan musiman '
-        .'pada data jumlah penumpang bulanan. '
-        .'Berdasarkan hasil evaluasi model menghasilkan '
-        .'nilai error terkecil dibanding metode SMA dan WMA.';
-
-        /*
-        |--------------------------------------------------------------------------
-        | Rekomendasi Operasional
-        |--------------------------------------------------------------------------
-        */
-
-        $recommendation = [
-
-            'type' => 'success',
-
-            'title' => 'Rekomendasi Operasional',
-
-            'summary' => 'Prediksi digunakan sebagai dasar persiapan operasional pelabuhan.',
-
-            'items' => [
-
-                'Menyesuaikan kesiapan armada dengan prediksi penumpang.',
-
-                'Melakukan evaluasi kapasitas pelayanan.',
-
-                'Melakukan pemantauan perubahan jumlah penumpang.',
-
-            ],
-
         ];
 
         return Inertia::render(
@@ -457,9 +314,9 @@ if($forecast){
                     ? Carbon::parse($lastInputDate->tanggal)->format('d F Y')
                     : null,
                 'summary' => [
-                    'total_penumpang' => $summary->total_penumpang,
-                    'jumlah_trip' => $summary->jumlah_trip,
-                    'occupancy' => $summary->occupancy,
+                    'total_penumpang' => (int) $summary->total_penumpang,
+                    'jumlah_trip' => (int) $summary->jumlah_trip,
+                    'occupancy' => round((float) $summary->occupancy, 1),
                 ],
                 'period' => [
                     'bulan' => $summary->period->bulan,
@@ -475,3 +332,4 @@ if($forecast){
         );
     }
 }
+

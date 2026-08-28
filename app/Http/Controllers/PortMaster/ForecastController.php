@@ -78,8 +78,13 @@ class ForecastController extends Controller
             ->first();
 
         // Data berjalan bulan ini
-        $activeSummary = MonthlySummary::where('monthly_period_id', $activePeriod?->id)->first();
+        if ($activePeriod && $activePeriod->status === 'open') {
+            $activeSummary = app(\App\Services\MonthlySummaryService::class)->generate($activePeriod->bulan, $activePeriod->tahun);
+        } else {
+            $activeSummary = MonthlySummary::where('monthly_period_id', $activePeriod?->id)->first();
+        }
         $activeActualPax = $activeSummary ? (int) $activeSummary->total_penumpang : 0;
+
 
         $growthFromLastActual = 0;
         $growthPassengers = 0;

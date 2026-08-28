@@ -34,6 +34,12 @@ class ReportController extends Controller
             $selectedYear = $availableYears[0];
         }
 
+        // Ensure open period summary in the selected year is synced
+        $openPeriod = MonthlyPeriod::where('status', 'open')->where('tahun', $selectedYear)->first();
+        if ($openPeriod) {
+            app(\App\Services\MonthlySummaryService::class)->generate($openPeriod->bulan, $openPeriod->tahun);
+        }
+
         // Get summaries for the selected year
         $summaries = MonthlySummary::with('period')
             ->whereHas('period', function ($q) use ($selectedYear) {
@@ -44,6 +50,7 @@ class ReportController extends Controller
                 return $item->period->bulan;
             })
             ->values();
+
 
         $monthNames = [
             1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
