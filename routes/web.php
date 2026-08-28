@@ -204,4 +204,55 @@ Route::get('/test-stats', function () {
     ];
 
 });
+/*
+|--------------------------------------------------------------------------
+| Halaman Diagram & Flowchart (Publik - Tanpa Auth)
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/flowchart', function () {
+    return inertia('Flowchart/index');
+})->name('flowchart');
+
+/*
+|--------------------------------------------------------------------------
+| Halaman Komparasi Metode Prediksi (Publik - Bab 4 Skripsi)
+|--------------------------------------------------------------------------
+*/
+Route::get('/komparasi', [\App\Http\Controllers\ComparisonController::class, 'index'])
+    ->name('comparison');
+
+/*
+|--------------------------------------------------------------------------
+| Halaman Lampiran & Pengujian Sistem (Publik - Bab 3 & Bab 4 Skripsi)
+|--------------------------------------------------------------------------
+*/
+Route::get('/lampiran-pengujian', function () {
+    return inertia('TestingDocs/index');
+})->name('testing-docs');
+
+/*
+|--------------------------------------------------------------------------
+| Halaman Demo Sidang & Safety Net Presentasi (Publik)
+|--------------------------------------------------------------------------
+*/
+Route::get('/demo-sidang', [\App\Http\Controllers\DemoSafetyController::class, 'index'])
+    ->name('demo-safety');
+Route::post('/demo-sidang/quick-login', [\App\Http\Controllers\DemoSafetyController::class, 'quickLogin'])
+    ->name('demo-safety.quick-login');
+Route::post('/demo-sidang/trigger-forecast', [\App\Http\Controllers\DemoSafetyController::class, 'triggerForecast'])
+    ->name('demo-safety.trigger-forecast');
+Route::post('/demo-sidang/inject-trip', [\App\Http\Controllers\DemoSafetyController::class, 'injectSampleTrip'])
+    ->name('demo-safety.inject-trip');
+Route::post('/demo-sidang/reset-database', [\App\Http\Controllers\DemoSafetyController::class, 'resetDatabase'])
+    ->name('demo-safety.reset-database');
+
+/*
+|--------------------------------------------------------------------------
+| Halaman Early Warning & Rekomendasi Kapasitas Armada (Decision Support)
+|--------------------------------------------------------------------------
+*/
+Route::get('/rekomendasi-armada', [\App\Http\Controllers\DecisionSupportController::class, 'index'])
+    ->name('decision-support');
+
 require __DIR__.'/settings.php';
